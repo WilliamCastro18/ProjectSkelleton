@@ -1,18 +1,22 @@
+using System.Collections;
 using UnityEngine;
 
 public class Player : MonoBehaviour
 {
+    public int health = 5;
     public float moveSpeed = 5f;
     public float jumpForce = 10f;
     public Transform groundCheck;
     public float groundCheckRadius = 0.2f;
     public LayerMask groundLayer;
 
+    private SpriteRenderer spriteRenderer;
     private Rigidbody2D rb;
     private bool isGrounded;
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
 
@@ -30,5 +34,33 @@ public class Player : MonoBehaviour
     private void FixedUpdate()
     {
         isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.tag == "Damage")
+        {
+            health -= 1;
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+            StartCoroutine(BlinkRed());
+
+            if (health <= 0)
+            {
+                Die();
+            }
+        }
+    }
+
+    private IEnumerator BlinkRed()
+    {
+        spriteRenderer.color = Color.red;
+        yield return new WaitForSeconds(0.1f);
+        spriteRenderer.color = Color.white;
+
+    }
+
+    private void Die()
+    {
+        UnityEngine.SceneManagement.SceneManager.LoadScene("GameScene");
     }
 }

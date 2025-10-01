@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 13312, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: Tiles
+  m_Name: long_metal_spike_0
   m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.Tilemaps.Tile
-  m_Sprite: {fileID: -2113482059250785770, guid: 7222179950b86b545ae43a9da41b2248, type: 3}
+  m_Sprite: {fileID: 268413913610557608, guid: 12ef249f217ae894ab9f2bea9c90110a, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Transform:
     e00: 1
