@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 13312, guid: 0000000000000000e000000000000000, type: 0}
   m_Name: Plataforma-Esgoto-direita
   m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.Tilemaps.Tile
-  m_Sprite: {fileID: 803438063903794061, guid: 0fc22c948d434084f998f37d3daf695e, type: 3}
+  m_Sprite: {fileID: -2113482059250785770, guid: 7222179950b86b545ae43a9da41b2248, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Transform:
     e00: 1
