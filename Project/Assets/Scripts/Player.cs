@@ -9,6 +9,7 @@ public class Player : MonoBehaviour
     public Transform groundCheck;
     public float groundCheckRadius = 0.2f;
     public LayerMask groundLayer;
+    public float variableJumpMultiplier = 0.5f;
 
     private SpriteRenderer spriteRenderer;
     private Rigidbody2D rb;
@@ -22,12 +23,20 @@ public class Player : MonoBehaviour
 
     void Update()
     {
+        // Movimento na horizontal
         float moveInput = Input.GetAxis("Horizontal");
         rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
 
+        // Pulo inicial
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+        }
+
+        // Pulo variável
+        if (Input.GetKeyUp(KeyCode.Space) && rb.linearVelocity.y > 0)
+        {
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * variableJumpMultiplier);
         }
     }
 
