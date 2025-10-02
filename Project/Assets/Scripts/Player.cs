@@ -60,6 +60,16 @@ public class Player : MonoBehaviour
         }
     }
 
+    public void TakeDamage(int damage)
+    {
+        health -= damage;
+        StartCoroutine(BlinkRed());
+        if (health <= 0)
+        {
+            Die();
+        }
+    }
+
     private IEnumerator BlinkRed()
     {
         spriteRenderer.color = Color.red;
