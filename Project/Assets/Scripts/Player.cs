@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Player : MonoBehaviour
 {
@@ -14,26 +15,28 @@ public class Player : MonoBehaviour
     private SpriteRenderer spriteRenderer;
     private Rigidbody2D rb;
     private bool isGrounded;
+
+    private Vector2 respawnPoint; // 🔹 Ponto de respawn atual
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
-    }
 
+        // 🔹 Define o respawn inicial como a posição inicial do jogador
+        respawnPoint = transform.position;
+    }
 
     void Update()
     {
-        // Movimento na horizontal
         float moveInput = Input.GetAxis("Horizontal");
         rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
 
-        // Pulo inicial
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
         }
 
-        // Pulo variável
         if (Input.GetKeyUp(KeyCode.Space) && rb.linearVelocity.y > 0)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * variableJumpMultiplier);
@@ -47,16 +50,10 @@ public class Player : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject.tag == "Damage")
+        if (collision.gameObject.CompareTag("Damage"))
         {
-            health -= 1;
+            TakeDamage(1);
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
-            StartCoroutine(BlinkRed());
-
-            if (health <= 0)
-            {
-                Die();
-            }
         }
     }
 
@@ -64,6 +61,7 @@ public class Player : MonoBehaviour
     {
         health -= damage;
         StartCoroutine(BlinkRed());
+
         if (health <= 0)
         {
             Die();
@@ -75,11 +73,27 @@ public class Player : MonoBehaviour
         spriteRenderer.color = Color.red;
         yield return new WaitForSeconds(0.1f);
         spriteRenderer.color = Color.white;
-
     }
 
     private void Die()
     {
-        UnityEngine.SceneManagement.SceneManager.LoadScene("GameScene");
+        StartCoroutine(RespawnAfterDelay(0.5f));
+    }
+
+    private IEnumerator RespawnAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        // 🔹 Reposiciona o player no último checkpoint
+        transform.position = respawnPoint;
+        health = 5; // recarrega vida total
+        rb.linearVelocity = Vector2.zero;
+    }
+
+    // 🔹 Chamada quando encosta em um checkpoint
+    public void UpdateCheckpoint(Vector2 newPosition)
+    {
+        respawnPoint = newPosition;
+        Debug.Log("Checkpoint atualizado para " + respawnPoint);
     }
 }
