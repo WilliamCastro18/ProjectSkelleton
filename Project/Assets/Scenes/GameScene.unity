@@ -290,7 +290,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DummyDamage
   damage: 1
-  playerHealth: {fileID: 1922181780}
+  growlClip: {fileID: 8300000, guid: d43bb68300651bf4b88cdf48b4ff4420, type: 3}
+  growlVolume: 0.5
+  detectionRadius: 3
 --- !u!114 &148153276
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1160,6 +1162,15 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   variableJumpMultiplier: 0.5
+  jumpClip: {fileID: 8300000, guid: ef97a293b53285c4cb9d207b732eef22, type: 3}
+  jumpVolume: 1
+  hitClip: {fileID: 8300000, guid: 3acbe5edda9dbf14e8f551f01178df6e, type: 3}
+  hitVolume: 1
+  invulnerabilityTime: 1
+  damageKnockback: {x: 0, y: 6}
+  runClip: {fileID: 8300000, guid: 6c30741f54cda4f4cae1e00358a8157d, type: 3}
+  runVolume: 1
+  runStartThreshold: 0.1
 --- !u!114 &1922181781
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1178,6 +1189,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 128
   attackDamage: 1
+  attackClip: {fileID: 8300000, guid: 560935d204b43a14b8866a567a918196, type: 3}
+  attackVolume: 1
   cooldownTime: 0.3
 --- !u!1 &2104006840
 GameObject:
