@@ -1287,7 +1287,7 @@ Transform:
   m_GameObject: {fileID: 1922181775}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.61, y: -0.82, z: 0}
+  m_LocalPosition: {x: 0.62, y: -0.83, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1363,6 +1363,20 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   variableJumpMultiplier: 0.5
+  jumpClip: {fileID: 8300000, guid: ef97a293b53285c4cb9d207b732eef22, type: 3}
+  jumpVolume: 1
+  hitClip: {fileID: 8300000, guid: 3acbe5edda9dbf14e8f551f01178df6e, type: 3}
+  hitVolume: 1
+  invulnerabilityTime: 1
+  damageKnockback: {x: 0, y: 6}
+  runClip: {fileID: 8300000, guid: 6c30741f54cda4f4cae1e00358a8157d, type: 3}
+  runVolume: 1
+  runStartThreshold: 0.1
+  tr: {fileID: 0}
+  wallCheck: {fileID: 1646172079}
+  wallLayer:
+    serializedVersion: 2
+    m_Bits: 0
 --- !u!114 &1922181781
 MonoBehaviour:
   m_ObjectHideFlags: 0
