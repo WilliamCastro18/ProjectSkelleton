@@ -44,6 +44,7 @@ public class Player : MonoBehaviour
     private float wallJumpingCounter;
     private float wallJumpingDuration = 0.4f;
     private Vector2 wallJumpingPower = new Vector2(6f, 10f);
+    public float wallSlideSpeed = 2f;
 
     private Rigidbody2D rb;
     private SpriteRenderer spriteRenderer;
@@ -107,14 +108,14 @@ public class Player : MonoBehaviour
         // Jump input
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
         {
-            rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
             if (runAudioSource.isPlaying) runAudioSource.Stop();
             if (jumpClip != null && sfxSource != null) sfxSource.PlayOneShot(jumpClip, jumpVolume);
         }
 
-        if (Input.GetKeyUp(KeyCode.Space) && rb.velocity.y > 0)
+        if (Input.GetKeyUp(KeyCode.Space) && rb.linearVelocity.y > 0)
         {
-            rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y * variableJumpMultiplier);
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * variableJumpMultiplier);
         }
 
         WallSlide();
@@ -155,7 +156,7 @@ public class Player : MonoBehaviour
 
         if (!isWallJumping)
         {
-            rb.velocity = new Vector2(horizontal * moveSpeed, rb.velocity.y);
+            rb.linearVelocity = new Vector2(horizontal * moveSpeed, rb.linearVelocity.y);
         }
     }
 
@@ -170,12 +171,25 @@ public class Player : MonoBehaviour
         if (IsWalled() && !isGrounded && Mathf.Abs(horizontal) > 0f)
         {
             isWallSliding = true;
-            rb.velocity = new Vector2(rb.velocity.x, -Mathf.Abs(wallJumpingPower.y) * 0.2f);
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, -Mathf.Abs(wallJumpingPower.y) * 0.2f);
         }
         else
         {
             isWallSliding = false;
         }
+        // slide quando encostado na parede, no ar e caindo
+        if (IsWalled() && !isGrounded && rb.linearVelocity.y < 0f)
+        {
+            isWallSliding = true;
+            // limita a velocidade de queda
+            float cappedY = Mathf.Max(rb.linearVelocity.y, -Mathf.Abs(wallSlideSpeed));
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, cappedY);
+        }
+        else
+        {
+            isWallSliding = false;
+        }
+
     }
 
     private void WallJump()
@@ -195,7 +209,7 @@ public class Player : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space) && wallJumpingCounter > 0f)
         {
             isWallJumping = true;
-            rb.velocity = new Vector2(wallJumpingDirection * wallJumpingPower.x, wallJumpingPower.y);
+            rb.linearVelocity = new Vector2(wallJumpingDirection * wallJumpingPower.x, wallJumpingPower.y);
             wallJumpingCounter = 0f;
 
             if (transform.localScale.x != wallJumpingDirection)
@@ -204,6 +218,34 @@ public class Player : MonoBehaviour
                 Vector3 localScale = transform.localScale;
                 localScale.x *= -1f;
                 transform.localScale = localScale;
+            }
+
+            Invoke(nameof(StopWallJumping), wallJumpingDuration);
+        }
+        if (IsWalled() && !isGrounded)
+        {
+            float wallDir = Mathf.Sign(wallCheck.position.x - transform.position.x);
+            wallJumpingDirection = -wallDir;
+            wallJumpingCounter = wallJumpingTime;
+        }
+        else
+        {
+            wallJumpingCounter -= Time.deltaTime;
+        }
+
+        if (Input.GetKeyDown(KeyCode.Space) && wallJumpingCounter > 0f)
+        {
+            isWallJumping = true;
+            rb.linearVelocity = new Vector2(wallJumpingDirection * wallJumpingPower.x, wallJumpingPower.y);
+            wallJumpingCounter = 0f;
+
+            bool shouldFaceRight = wallJumpingDirection > 0f;
+            if ((shouldFaceRight && transform.localScale.x < 0f) || (!shouldFaceRight && transform.localScale.x > 0f))
+            {
+                Vector3 localScale = transform.localScale;
+                localScale.x *= -1f;
+                transform.localScale = localScale;
+                isFacingRight = localScale.x > 0f;
             }
 
             Invoke(nameof(StopWallJumping), wallJumpingDuration);
@@ -232,7 +274,7 @@ public class Player : MonoBehaviour
         isDashing = true;
         float originalGravity = rb.gravityScale;
         rb.gravityScale = 0f;
-        rb.velocity = new Vector2(transform.localScale.x * dashingPower, 0f);
+        rb.linearVelocity = new Vector2(transform.localScale.x * dashingPower, 0f);
         if (tr != null) tr.emitting = true;
         yield return new WaitForSeconds(dashingTime);
         if (tr != null) tr.emitting = false;
@@ -247,7 +289,7 @@ public class Player : MonoBehaviour
         if (collision.gameObject.CompareTag("Damage"))
         {
             TakeDamage(1);
-            rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
         }
     }
 
@@ -262,7 +304,7 @@ public class Player : MonoBehaviour
 
         if (runAudioSource != null && runAudioSource.isPlaying) runAudioSource.Stop();
 
-        rb.velocity = new Vector2(rb.velocity.x, damageKnockback.y);
+        rb.linearVelocity = new Vector2(rb.linearVelocity.x, damageKnockback.y);
 
         StartCoroutine(Invulnerability());
 
@@ -298,7 +340,7 @@ public class Player : MonoBehaviour
         yield return new WaitForSeconds(delay);
         transform.position = respawnPoint;
         health = 5;
-        rb.velocity = Vector2.zero;
+        rb.linearVelocity = Vector2.zero;
     }
 
     public void UpdateCheckpoint(Vector2 newPosition)
