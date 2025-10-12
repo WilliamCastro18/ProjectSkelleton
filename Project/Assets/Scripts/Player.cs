@@ -1,11 +1,16 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Player : MonoBehaviour
 {
     public int health = 5;
     public float moveSpeed = 5f;
     public float jumpForce = 10f;
+    private bool isWallSliding;
+    private float wallSlideSpeed = 2f;
+    private float horizontal;
+    private bool isFacingRight = true;
     public Transform groundCheck;
     public float groundCheckRadius = 0.2f;
     public LayerMask groundLayer;
@@ -30,27 +35,31 @@ public class Player : MonoBehaviour
     public float runStartThreshold = 0.1f;
     AudioSource runAudioSource;
     // fim som de corrida
+    private bool doubleJump;
+    private bool canDash = true;
+    private bool isDashing;
+    private float dashingPower = 10f;
+    private float dashingTime = 0.2f;
+    private float dashingCooldown = 1f;
+    private bool isWallJumping;
+    private float wallJumpingDirection;
+    private float wallJumpingTime = 0.2f;
+    private float wallJumpingCounter;
+    private float wallJumpingDuration = 0.4f;
+    private Vector2 wallJumpingPower = new Vector2(6f, 10f);
+
+    [SerializeField] private TrailRenderer tr;
+    [SerializeField] Transform wallCheck;
+    [SerializeField] private LayerMask wallLayer;
 
     private SpriteRenderer spriteRenderer;
     private Rigidbody2D rb;
     private bool isGrounded;
-
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
-
-        audioSource = GetComponent<AudioSource>();
-        if (audioSource == null) audioSource = gameObject.AddComponent<AudioSource>();
-        audioSource.playOnAwake = false;
-
-        runAudioSource = gameObject.AddComponent<AudioSource>();
-        runAudioSource.playOnAwake = false;
-        runAudioSource.loop = true;
-        runAudioSource.spatialBlend = 1f;
-        runAudioSource.volume = runVolume;
     }
-
 
     void Update()
     {
@@ -58,53 +67,86 @@ public class Player : MonoBehaviour
         float moveInput = Input.GetAxis("Horizontal");
         rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
 
-        bool isMoving = Mathf.Abs(moveInput) > runStartThreshold && isGrounded;
-        if (isMoving && runClip != null)
-        {
-            if (!runAudioSource.isPlaying)
-            {
-                runAudioSource.clip = runClip;
-                runAudioSource.volume = runVolume;
-                runAudioSource.Play();
-            }
-        }
-        else
-        {
-            if (runAudioSource.isPlaying) runAudioSource.Stop();
-        }
-
         // Pulo inicial
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
-
-            // parar som de corrida ao pular
-            if (runAudioSource.isPlaying) runAudioSource.Stop();
-
-            if (jumpClip != null && audioSource != null)
-            {
-                audioSource.PlayOneShot(jumpClip, jumpVolume);
-            }
         }
 
-        // Pulo variável
         if (Input.GetKeyUp(KeyCode.Space) && rb.linearVelocity.y > 0)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * variableJumpMultiplier);
         }
+
+        WallSlide();
+        WallJump();
+
+        if (!isWallJumping)
+        {
+            Flip();
+        }
+
+        if (Input.GetKeyDown(KeyCode.LeftShift) && canDash)
+        {
+            StartCoroutine(Dash());
+        }      
     }
 
     private void FixedUpdate()
     {
+        if (isDashing)
+        {
+            return;
+        }
+
+        if (!isWallJumping)
+        {
+            rb.linearVelocity = new Vector2(horizontal * moveSpeed, rb.linearVelocity.y);
+            Flip();
+        }
+
+        
+
         isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+
+    }
+
+    private bool IsWalled()
+    {
+        return Physics2D.OverlapCircle(wallCheck.position, 0.2f, wallLayer);
+    }
+
+    private void WallSlide()
+    {
+        if (IsWalled() && !isGrounded && horizontal < 0)
+        {
+            isWallSliding = true;
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, -wallSlideSpeed*1.5f);
+        }
+        else
+        {
+            isWallSliding = false;
+        }
+    }
+
+    private void Flip()
+    {
+        if(isFacingRight && horizontal < 0f || !isFacingRight && horizontal > 0f)
+        {
+            isFacingRight = !isFacingRight;
+            Vector3 localScale = transform.localScale;
+            localScale.x *= -1f;
+            transform.localScale = localScale;
+        }
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject.tag == "Damage")
+        if (collision.gameObject.CompareTag("Damage"))
         {
             TakeDamage(1);
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+            StartCoroutine(BlinkRed());
 
             if (health <= 0)
             {
@@ -118,17 +160,7 @@ public class Player : MonoBehaviour
         if (isInvulnerable) return;
 
         health -= damage;
-        if (hitClip != null && audioSource != null)
-        {
-            audioSource.PlayOneShot(hitClip, hitVolume);
-        }
-
-        if (runAudioSource != null && runAudioSource.isPlaying) runAudioSource.Stop();
-
-        rb.linearVelocity = new Vector2(rb.linearVelocity.x, damageKnockback.y);
-
-        StartCoroutine(Invulnerability());
-
+        StartCoroutine(BlinkRed());
         if (health <= 0)
         {
             Die();
@@ -144,27 +176,77 @@ public class Player : MonoBehaviour
 
     }
 
-    // Invulnerabilidade ao tomar dano
-    private IEnumerator Invulnerability()
-{
-    isInvulnerable = true;
-    float elapsed = 0f;
-
-    while (elapsed < invulnerabilityTime)
-    {
-        spriteRenderer.color = Color.red;
-        yield return new WaitForSeconds(0.1f);
-        spriteRenderer.color = Color.white;
-        yield return new WaitForSeconds(0.1f);
-        elapsed += 0.2f;
-    }
-
-    spriteRenderer.color = Color.white;
-    isInvulnerable = false;
-}
-
     private void Die()
     {
-        UnityEngine.SceneManagement.SceneManager.LoadScene("GameScene");
+        StartCoroutine(RespawnAfterDelay(0.5f));
+    }
+
+    private IEnumerator RespawnAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        // 🔹 Reposiciona o player no último checkpoint
+        transform.position = respawnPoint;
+        health = 5; // recarrega vida total
+        rb.linearVelocity = Vector2.zero;
+    }
+
+    // 🔹 Chamada quando encosta em um checkpoint
+    public void UpdateCheckpoint(Vector2 newPosition)
+    {
+        respawnPoint = newPosition;
+        Debug.Log("Checkpoint atualizado para " + respawnPoint);
+    }
+
+    private IEnumerator Dash()
+    {
+        canDash = false;
+        isDashing = true;
+        float originalGravity = rb.gravityScale;
+        rb.gravityScale = 0f;
+        rb.linearVelocity = new Vector2(transform.localScale.x * dashingPower, 0f);
+        tr.emitting = true;
+        yield return new WaitForSeconds(dashingTime);
+        tr.emitting = false;
+        rb.gravityScale = originalGravity;
+        isDashing = false;
+        yield return new WaitForSeconds(dashingCooldown);
+        canDash = true;
+    }
+
+    private void WallJump()
+    {
+        if(isWallSliding){
+            isWallJumping = false;
+            wallJumpingDirection = -transform.localScale.x;
+            wallJumpingCounter = wallJumpingTime;
+            CancelInvoke(nameof(StopWallJumping));
+        }
+        else
+        {
+            wallJumpingCounter -= Time.deltaTime;
+        }
+
+        if(Input.GetKeyDown(KeyCode.Space) && wallJumpingCounter > 0f)
+        {
+            isWallJumping = true;
+            rb.linearVelocity = new Vector2(wallJumpingDirection * wallJumpingPower.x, wallJumpingPower.y);
+            wallJumpingCounter = 0f;
+
+            if(transform.localScale.x != wallJumpingDirection)
+            {
+                isFacingRight = !isFacingRight;
+                Vector3 localScale = transform.localScale;
+                localScale.x *= -1f;
+                transform.localScale = localScale;
+            }
+
+            Invoke(nameof(StopWallJumping), wallJumpingDuration);
+        }
+    }
+
+    private void StopWallJumping()
+    {
+        isWallJumping = false;
     }
 }
