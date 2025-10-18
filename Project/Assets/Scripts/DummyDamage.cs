@@ -23,11 +23,18 @@ public class DummyDamage : MonoBehaviour
         audioSource.spatialBlend = 1f;
         audioSource.volume = growlVolume;
 
-        //detectando proximidade do player
+        // detectando proximidade do player
         detectionCollider = GetComponent<CircleCollider2D>();
         if (detectionCollider == null) detectionCollider = gameObject.AddComponent<CircleCollider2D>();
         detectionCollider.isTrigger = true;
         detectionCollider.radius = detectionRadius;
+
+        // Torna todos os outros colliders do inimigo triggers também (evita bloqueio físico)
+        foreach (var col in GetComponents<Collider2D>())
+        {
+            if (col == detectionCollider) continue;
+            col.isTrigger = true;
+        }
 
         var pgo = GameObject.FindGameObjectWithTag("Player");
         if (pgo != null) playerTransform = pgo.transform;
@@ -48,25 +55,45 @@ public class DummyDamage : MonoBehaviour
         }
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
-    {
-        if (collision.gameObject.CompareTag("Player"))
-        {
-            var p = collision.gameObject.GetComponent<Player>();
-            if (p != null) p.TakeDamage(damage);
-        }
-    }
-
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (!other.CompareTag("Player")) return;
+
+        // Verifica interseção entre bounds do player e dos colliders "de corpo" do inimigo
+        var bodyColliders = GetComponentsInChildren<Collider2D>();
+        foreach (var col in bodyColliders)
+        {
+            if (col == detectionCollider) continue;
+
+            // ignora se o collider estiver desativado
+            if (!col.enabled) continue;
+
+            // usa Intersects para detectar sobreposição mesmo em bordas
+            if (col.bounds.Intersects(other.bounds))
+            {
+                var p = other.GetComponent<Player>();
+                if (p != null)
+                {
+                    // passa a posição deste inimigo como fonte do dano
+                    p.TakeDamage(damage, transform.position);
+                }
+                return;
+            }
+        }
+
+        // Se não aplicou dano, provavelmente foi apenas a zona de detecção a tocar growl
         PlayGrowl();
     }
 
     private void OnTriggerExit2D(Collider2D other)
     {
         if (!other.CompareTag("Player")) return;
-        StopGrowl();
+
+        // se saiu da zona de detecção, parar growl
+        if (detectionCollider != null && !detectionCollider.bounds.Contains(other.bounds.center))
+        {
+            StopGrowl();
+        }
     }
 
     private void PlayGrowl()
