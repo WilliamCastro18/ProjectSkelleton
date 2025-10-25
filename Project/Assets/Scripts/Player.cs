@@ -9,6 +9,7 @@ public class Player : MonoBehaviour
     public float moveSpeed = 5f;
     public float jumpForce = 10f;
     public float variableJumpMultiplier = 0.5f;
+    public MonsterMovement monsterMovement;
 
     [Header("Ground / Wall checks")]
     public Transform groundCheck;
@@ -556,9 +557,10 @@ public class Player : MonoBehaviour
         isInvulnerable = false;
     }
 
-    private void Die()
+    public void Die()
     {
         StartCoroutine(RespawnAfterDelay(0.5f));
+        monsterMovement.isChasing = false;
     }
 
     private IEnumerator RespawnAfterDelay(float delay)
