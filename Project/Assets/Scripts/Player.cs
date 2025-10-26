@@ -27,12 +27,15 @@ public class Player : MonoBehaviour
     [Range(0f,1f)] public float runVolume = 1f;
     public float runStartThreshold = 0.1f;
 
+
+
+
     [Header("Damage / Invulnerability")]
     public float invulnerabilityTime = 1f;
     public Vector2 damageKnockback = new Vector2(0f, 6f);
-    // knockback mais forte quando a fonte do dano é conhecida
+    // knockback mais forte quando a fonte do dano ï¿½ conhecida
     public Vector2 strongDamageKnockback = new Vector2(6f, 8f);
-    // duração (segundos) que o jogador fica sem controle horizontal após knockback
+    // duraï¿½ï¿½o (segundos) que o jogador fica sem controle horizontal apï¿½s knockback
     public float knockbackDuration = 0.25f;
 
     [Header("Dash / WallJump")]
@@ -50,10 +53,10 @@ public class Player : MonoBehaviour
     private Vector2 wallJumpingPower = new Vector2(6f, 10f);
     public float wallSlideSpeed = 2f;
 
-    // novo: multiplicador para pulo vertical reduzido quando saltando "grudado" ou em direção à parede
+    // novo: multiplicador para pulo vertical reduzido quando saltando "grudado" ou em direï¿½ï¿½o ï¿½ parede
     public float smallWallJumpMultiplier = 0.7f;
 
-    // novo: tempo que o jogador fica "grudado" antes de começar a deslizar
+    // novo: tempo que o jogador fica "grudado" antes de comeï¿½ar a deslizar
     public float wallStickTime = 1f;
     private float wallStickTimer = 0f;
     private bool wasTouchingWall = false;
@@ -82,6 +85,11 @@ public class Player : MonoBehaviour
 
     // double jump
     private bool hasDoubleJumped = false;
+
+    // Dash sound ------------------
+    public AudioClip dashClip;
+    [Range(0f,1f)] public float dashVolume = 1f;
+    // --------------------
 
     void Start()
     {
@@ -128,7 +136,7 @@ public class Player : MonoBehaviour
 
     void Update()
     {
-        // DEBUG: pressione L para listar colliders próximos (Overlap) e C para listar contatos atuais do Rigidbody
+        // DEBUG: pressione L para listar colliders prï¿½ximos (Overlap) e C para listar contatos atuais do Rigidbody
         if (Input.GetKeyDown(KeyCode.L))
         {
             DebugLogNearbyColliders();
@@ -169,7 +177,7 @@ public class Player : MonoBehaviour
         WallSlide();
         WallJump();
 
-        // Double jump (executado após WallJump para não conflitar com wall-jump)
+        // Double jump (executado apï¿½s WallJump para nï¿½o conflitar com wall-jump)
         if (Input.GetKeyDown(KeyCode.Space) && !isGrounded && !isWallJumping && !hasDoubleJumped)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
@@ -178,14 +186,14 @@ public class Player : MonoBehaviour
             if (jumpClip != null && sfxSource != null) sfxSource.PlayOneShot(jumpClip, jumpVolume);
         }
 
-        // permite flip mais cedo: agora FlipIfNeeded é aplicado normalmente (controle horizontal pode tomar efeito cedo)
+        // permite flip mais cedo: agora FlipIfNeeded ï¿½ aplicado normalmente (controle horizontal pode tomar efeito cedo)
         if (!isWallJumping)
         {
             FlipIfNeeded();
         }
         else
         {
-            // mesmo durante wall-jump permita alterarmos facing se o jogador já estiver pressionando direção oposta
+            // mesmo durante wall-jump permita alterarmos facing se o jogador jï¿½ estiver pressionando direï¿½ï¿½o oposta
             if ((isFacingRight && horizontal < 0f) || (!isFacingRight && horizontal > 0f))
             {
                 FlipIfNeeded();
@@ -229,7 +237,7 @@ public class Player : MonoBehaviour
 
         if (isDashing) return;
 
-        // Permite ao jogador modificar a direção horizontal mais cedo, mesmo durante um wall-jump.
+        // Permite ao jogador modificar a direï¿½ï¿½o horizontal mais cedo, mesmo durante um wall-jump.
         // Isso garante que o salto diagonal (ou qualquer wall-jump) possa ser alterado mid-air.
         if (!isKnockedBack)
         {
@@ -248,17 +256,17 @@ public class Player : MonoBehaviour
         {
             if (col == null) continue;
 
-            // ignora triggers (não devem bloquear movimento)
+            // ignora triggers (nï¿½o devem bloquear movimento)
             if (col.isTrigger) continue;
 
             // ignora inimigos (que possuem HealthManager)
             if (col.GetComponentInParent<HealthManager>() != null || col.GetComponentInChildren<HealthManager>() != null)
                 continue;
 
-            // ignora colisor do próprio jogador (por segurança)
+            // ignora colisor do prï¿½prio jogador (por seguranï¿½a)
             if (col.gameObject == gameObject) continue;
 
-            // log para identificar o que está bloqueando
+            // log para identificar o que estï¿½ bloqueando
             Debug.Log($"[IsWalled] collider detected: {col.gameObject.name} layer={LayerMask.LayerToName(col.gameObject.layer)} isTrigger={col.isTrigger}");
 
             return true;
@@ -270,7 +278,7 @@ public class Player : MonoBehaviour
     private void WallSlide()
     {
         // comportamento: quando tocar a parede e estiver no ar, fica "grudado" por wallStickTime segundos (sem deslizar)
-        // se o jogador pressionar direção oposta à parede enquanto grudado -> cancela o "stick" e começa a deslizar imediatamente
+        // se o jogador pressionar direï¿½ï¿½o oposta ï¿½ parede enquanto grudado -> cancela o "stick" e comeï¿½a a deslizar imediatamente
 
         bool touchingWall = IsWalled() && !isGrounded;
         float wallDir = 0f;
@@ -285,7 +293,7 @@ public class Player : MonoBehaviour
             }
             wasTouchingWall = true;
 
-            // se o jogador estiver pressionando na direção contrária à parede, quebra o "stick"
+            // se o jogador estiver pressionando na direï¿½ï¿½o contrï¿½ria ï¿½ parede, quebra o "stick"
             if (Mathf.Abs(horizontal) > 0.1f && wallDir != 0f && Mathf.Sign(horizontal) != wallDir)
             {
                 wallStickTimer = 0f;
@@ -293,14 +301,14 @@ public class Player : MonoBehaviour
 
             if (wallStickTimer > 0f)
             {
-                // permanece "grudado" — cancela deslocamento vertical para evitar deslize
+                // permanece "grudado" ï¿½ cancela deslocamento vertical para evitar deslize
                 wallStickTimer -= Time.deltaTime;
                 rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
                 isWallSliding = false;
                 return;
             }
 
-            // quando o timer expira, começa o sliding normal (limita velocidade de queda)
+            // quando o timer expira, comeï¿½a o sliding normal (limita velocidade de queda)
             isWallSliding = true;
             float cappedY = Mathf.Max(rb.linearVelocity.y, -Mathf.Abs(wallSlideSpeed));
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, cappedY);
@@ -310,7 +318,7 @@ public class Player : MonoBehaviour
         {
             wasTouchingWall = false;
             wallStickTimer = 0f;
-            // padrão: se estiver caindo e não em parede, aplicar clamp normal (já feito por outras rotinas), aqui apenas zera isWallSliding
+            // padrï¿½o: se estiver caindo e nï¿½o em parede, aplicar clamp normal (jï¿½ feito por outras rotinas), aqui apenas zera isWallSliding
             isWallSliding = false;
         }
     }
@@ -337,7 +345,7 @@ public class Player : MonoBehaviour
             float inputVer = vertical;
             bool lookingUp = inputVer > 0.1f;
 
-            // direção aproximada da parede (se existir)
+            // direï¿½ï¿½o aproximada da parede (se existir)
             float wallDir = 0f;
             if (wallCheck != null) wallDir = Mathf.Sign(wallCheck.position.x - transform.position.x);
 
@@ -355,20 +363,20 @@ public class Player : MonoBehaviour
             }
             else
             {
-                // Caso B: se não houver input horizontal -> salto diagonal na direção contrária à que está olhando
+                // Caso B: se nï¿½o houver input horizontal -> salto diagonal na direï¿½ï¿½o contrï¿½ria ï¿½ que estï¿½ olhando
                 if (!hasDirectionalInput)
                 {
-                    float dir = -Mathf.Sign(transform.localScale.x); // oposto ao que está olhando
+                    float dir = -Mathf.Sign(transform.localScale.x); // oposto ao que estï¿½ olhando
                     rb.linearVelocity = new Vector2(dir * wallJumpingPower.x, wallJumpingPower.y);
-                    // NÃO invertemos o facing automaticamente: jogador continua olhando para onde estava
+                    // Nï¿½O invertemos o facing automaticamente: jogador continua olhando para onde estava
                 }
                 else
                 {
-                    // Caso C: input horizontal presente -> normal wall-jump na direção do input
+                    // Caso C: input horizontal presente -> normal wall-jump na direï¿½ï¿½o do input
                     float dir = Mathf.Sign(inputHor);
                     rb.linearVelocity = new Vector2(dir * wallJumpingPower.x, wallJumpingPower.y);
 
-                    // ajusta facing se necessário
+                    // ajusta facing se necessï¿½rio
                     bool shouldFaceRight = dir > 0f;
                     if ((shouldFaceRight && transform.localScale.x < 0f) || (!shouldFaceRight && transform.localScale.x > 0f))
                     {
@@ -380,7 +388,7 @@ public class Player : MonoBehaviour
                 }
             }
 
-            // Permite alteração de trajetória cedo (FixedUpdate já aplica horizontal conforme input).
+            // Permite alteraï¿½ï¿½o de trajetï¿½ria cedo (FixedUpdate jï¿½ aplica horizontal conforme input).
             Invoke(nameof(StopWallJumping), wallJumpingDuration);
         }
 
@@ -416,6 +424,12 @@ public class Player : MonoBehaviour
     {
         canDash = false;
         isDashing = true;
+        if (dashClip != null && sfxSource != null)
+        {
+            sfxSource.PlayOneShot(dashClip, dashVolume);
+        }
+        if (runAudioSource != null && runAudioSource.isPlaying) runAudioSource.Stop();
+
         float originalGravity = rb.gravityScale;
         rb.gravityScale = 0f;
         rb.linearVelocity = new Vector2(transform.localScale.x * dashingPower, 0f);
@@ -432,7 +446,7 @@ public class Player : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Damage"))
         {
-            // passa a posição do colisor que causou o dano para aplicar knockback direcional
+            // passa a posiï¿½ï¿½o do colisor que causou o dano para aplicar knockback direcional
             TakeDamage(1, collision.transform.position);
         }
     }
@@ -485,8 +499,8 @@ public class Player : MonoBehaviour
 
         if (runAudioSource != null && runAudioSource.isPlaying) runAudioSource.Stop();
 
-        // cálculo de knockback direcional:
-        float horizKnock = rb.linearVelocity.x; // fallback mantém velocidade atual no X
+        // cï¿½lculo de knockback direcional:
+        float horizKnock = rb.linearVelocity.x; // fallback mantï¿½m velocidade atual no X
         float vertKnock = damageKnockback.y;   // fallback vertical antigo
 
         if (sourcePosition.HasValue)
@@ -496,7 +510,7 @@ public class Player : MonoBehaviour
             float absX = Mathf.Abs(delta.x);
             float absY = Mathf.Abs(delta.y);
 
-            // horizontal forte sempre na direção contrária à que o jogador está olhando
+            // horizontal forte sempre na direï¿½ï¿½o contrï¿½ria ï¿½ que o jogador estï¿½ olhando
             float oppositeSign = -Mathf.Sign(transform.localScale.x);
             horizKnock = oppositeSign * strongDamageKnockback.x;
 
@@ -510,19 +524,19 @@ public class Player : MonoBehaviour
                 // dano vindo de cima/baixo
                 if (delta.y < 0f)
                 {
-                    // fonte abaixo -> lança para cima também
+                    // fonte abaixo -> lanï¿½a para cima tambï¿½m
                     vertKnock = strongDamageKnockback.y;
                 }
                 else
                 {
-                    // fonte acima -> não lança para baixo, apenas horizontal
+                    // fonte acima -> nï¿½o lanï¿½a para baixo, apenas horizontal
                     vertKnock = 0f;
                 }
             }
         }
         else
         {
-            // sem posição do atacante: comportamento antigo (lança pra cima)
+            // sem posiï¿½ï¿½o do atacante: comportamento antigo (lanï¿½a pra cima)
             horizKnock = rb.linearVelocity.x;
             vertKnock = damageKnockback.y;
         }
@@ -591,4 +605,5 @@ public class Player : MonoBehaviour
             Gizmos.DrawWireSphere(wallCheck.position, 0.2f);
         }
     }
+    
 }
